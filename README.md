@@ -642,51 +642,39 @@ backend/reports/
 
 ### Home Page
 
-<img src="screenshots/home.png" alt="Home Page">
 
 ### Login Page
 
-<img src="screenshots/login.png" alt="Login Page">
 
 ### Registration Page
 
-<img src="screenshots/register.png" alt="Registration Page">
 
 ### Candidate Dashboard
 
-<img src="screenshots/candidate-dashboard.png" alt="Candidate Dashboard">
 
 ### Resume Analysis
 
-<img src="screenshots/resume-analysis.png" alt="Resume Analysis">
 
 ### Job Description + Match
 
-<img src="screenshots/jd-match.png" alt="JD Match">
 
 ### Interview Type Selection
 
-<img src="screenshots/interview-type.png" alt="Interview Type">
 
 ### Interview Room
 
-<img src="screenshots/interview-room.png" alt="Interview Room">
 
 ### Interview Analytics
 
-<img src="screenshots/interview-analytics.png" alt="Interview Analytics">
 
 ### AI Feedback
 
-<img src="screenshots/ai-feedback.png" alt="AI Feedback">
 
 ### Recruiter Dashboard
 
-<img src="screenshots/recruiter-dashboard.png" alt="Recruiter Dashboard">
 
 ### Admin Dashboard
 
-<img src="screenshots/admin-dashboard.png" alt="Admin Dashboard">
 
 ---
 
