@@ -808,20 +808,6 @@ Possible targets: Render / Railway / AWS for API; managed PostgreSQL; Docker + C
 
 ---
 
-# 👨‍💻 Author
-
-**Soham Dey**
-
-B.E. Computer Science & Engineering  
-University Institute of Technology, The University of Burdwan
-
-Machine Learning • Artificial Intelligence • Full-Stack Development
-
-- GitHub: https://github.com/SohamDey2005
-- LinkedIn: https://www.linkedin.com/in/sohamdeydurgapur
-
----
-
 # ⭐ Summary
 
 SmartHire AI is a complete AI-powered interview and recruitment support platform integrating multi-role authentication, resume analysis, JD matching, type-specific AI interviews, real-time monitoring, analytics, recruiter shortlisting, and admin visibility.
