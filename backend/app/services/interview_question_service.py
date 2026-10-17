@@ -36,9 +36,9 @@ class InterviewQuestionService:
         )
 
         if not analysis:
-            raise Exception(
-                "Resume must be analyzed first."
-            )
+            from app.services.resume_analysis_service import ResumeAnalysisService
+            analysis_service = ResumeAnalysisService(self.analysis_repository)
+            analysis = analysis_service.analyze_resume(resume)
 
         generator = InterviewGenerator()
 

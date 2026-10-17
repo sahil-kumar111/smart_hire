@@ -1,10 +1,20 @@
-import axios from "axios";
+import api from "../api/axios";
 
-const API = "http://127.0.0.1:8000/api/v1";
+export interface CandidateInterview {
+    session_id: number;
+    overall_score: number;
+    date: string;
+    interview_type?: string;
+    session_status?: string;
+    candidate_name?: string;
+    candidate_email?: string;
+    status: "pending" | "selected" | "shortlisted" | "rejected";
+    selection_status: "pending" | "selected" | "shortlisted" | "rejected";
+}
 
-export async function getShortlist(token: string) {
-    const res = await axios.get(`${API}/recruiter/shortlist`, {
-        headers: { Authorization: `Bearer ${token}` },
+export async function getShortlist(token?: string) {
+    const res = await api.get("/recruiter/shortlist", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
     return res.data as Array<{ session_id: number; status: string }>;
 }
@@ -12,12 +22,19 @@ export async function getShortlist(token: string) {
 export async function updateShortlist(
     sessionId: number,
     status: string,
-    token: string
+    token?: string
 ) {
-    const res = await axios.post(
-        `${API}/recruiter/shortlist`,
+    const res = await api.post(
+        "/recruiter/shortlist",
         { session_id: sessionId, status },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
     );
     return res.data;
+}
+
+export async function getCandidateInterviews(token?: string): Promise<CandidateInterview[]> {
+    const res = await api.get("/candidate/interviews", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    return Array.isArray(res.data) ? res.data : [];
 }

@@ -56,32 +56,22 @@ class PDFReportService:
             )
         )
 
+        transcript_para = Paragraph(str(report.get("transcript", "N/A")), styles["Normal"])
+
         table = Table(
-
             [
-
-                ["Session ID", report["session_id"]],
-
-                ["Transcript", report["transcript"]],
-
-                ["Word Count", report["word_count"]],
-
-                ["Duration", report["duration"]],
-
-                ["Fluency", report["fluency_score"]],
-
-                ["Filler Words", report["filler_count"]],
-
-                ["Emotion", report["dominant_emotion"]],
-
-                ["Eye Contact", report["eye_contact_score"]],
-
-                ["Overall Score", report["overall_score"]],
-
-                ["Recommendation", report["recommendation"]],
-
-            ]
-
+                ["Session ID", str(report.get("session_id", ""))],
+                ["Transcript", transcript_para],
+                ["Word Count", str(report.get("word_count", 0))],
+                ["Duration", f"{report.get('duration', 0):.1f}s"],
+                ["Fluency Score", f"{report.get('fluency_score', 0):.1f}%"],
+                ["Filler Words", str(report.get("filler_count", 0))],
+                ["Dominant Emotion", str(report.get("dominant_emotion", "Neutral")).capitalize()],
+                ["Eye Contact Score", f"{report.get('eye_contact_score', 0):.1f}%"],
+                ["Overall Score", f"{report.get('overall_score', 0):.1f}/100"],
+                ["Recommendation", str(report.get("recommendation", "Completed"))],
+            ],
+            colWidths=[130, 360],
         )
 
         table.setStyle(

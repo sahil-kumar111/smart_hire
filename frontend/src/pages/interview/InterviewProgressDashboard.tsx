@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
+import api from "../../api/axios";
 import {
     LineChart,
     Line,
@@ -45,34 +45,24 @@ interface Snapshot {
 export default function ProgressDashboard() {
     const { sessionId } = useParams();
     const navigate = useNavigate();
-    const token = localStorage.getItem("token");
-
     const [history, setHistory] = useState<Snapshot[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        loadHistory();
-    }, []);
-
-    const loadHistory = async () => {
+    const loadHistory = useCallback(async () => {
         try {
-            const base =
-                import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api/v1";
-            const response = await axios.get(
-                `${base}/monitor-history/${sessionId}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
-            setHistory(response.data);
+            const response = await api.get(`/monitor-history/${sessionId}`);
+            setHistory(response.data || []);
         } catch (err) {
-            console.log(err);
+            console.error(err);
+            setHistory([]);
         } finally {
             setLoading(false);
         }
-    };
+    }, [sessionId]);
+
+    useEffect(() => {
+        loadHistory();
+    }, [loadHistory]);
 
     if (loading) {
         return (

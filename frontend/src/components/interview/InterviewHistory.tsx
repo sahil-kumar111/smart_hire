@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../../api/axios";
 
 type HistoryItem = {
     session_id: number;
@@ -9,58 +9,25 @@ type HistoryItem = {
 };
 
 export default function InterviewHistory() {
-
     const navigate = useNavigate();
-
-    const token = localStorage.getItem("token");
-
     const [history, setHistory] = useState<HistoryItem[]>([]);
-
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-
-        loadHistory();
-
+    const loadHistory = useCallback(async () => {
+        try {
+            const response = await api.get("/interview-monitor/history");
+            setHistory(response.data || []);
+        } catch (error) {
+            console.error(error);
+            setHistory([]);
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
-    async function loadHistory() {
-
-        try {
-
-            const response = await axios.get(
-
-                "http://127.0.0.1:8000/api/v1/interview-monitor/history",
-
-                {
-
-                    headers: {
-
-                        Authorization: `Bearer ${token}`,
-
-                    },
-
-                }
-
-            );
-
-            setHistory(response.data);
-
-        }
-
-        catch (error) {
-
-            console.error(error);
-
-        }
-
-        finally {
-
-            setLoading(false);
-
-        }
-
-    }
+    useEffect(() => {
+        loadHistory();
+    }, [loadHistory]);
 
     if (loading) {
 

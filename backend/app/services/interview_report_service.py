@@ -100,12 +100,6 @@ class InterviewReportService:
 
             )
 
-            ai = InterviewReportAI()
-
-            ai_report = ai.generate(
-                reports,
-            )
-
         overall_score = (
 
             round(

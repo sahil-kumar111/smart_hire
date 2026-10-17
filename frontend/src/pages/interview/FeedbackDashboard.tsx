@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../../api/axios";
 import {
     Bot,
     ArrowLeft,
@@ -41,41 +41,77 @@ export default function FeedbackDashboard() {
     const [data, setData] = useState<FeedbackData | null>(null);
     const [loading, setLoading] = useState(true);
 
+    const loadFeedback = async (retries = 3, delayMs = 1200) => {
+        if (!sessionId) return;
+        setLoading(true);
+        for (let i = 0; i < retries; i++) {
+            try {
+                const response = await api.get(
+                    `/feedback/${sessionId}`,
+                    {
+                        headers: token
+                            ? {
+                                Authorization: `Bearer ${token}`,
+                            }
+                            : {},
+                    }
+                );
+                if (response.data) {
+                    setData(response.data);
+                    setLoading(false);
+                    return;
+                }
+            } catch (err) {
+                if (i < retries - 1) {
+                    await new Promise((res) => setTimeout(res, delayMs));
+                } else {
+                    console.error("Feedback loading error:", err);
+                }
+            }
+        }
+        setLoading(false);
+    };
+
     useEffect(() => {
         loadFeedback();
-    }, []);
-
-    const loadFeedback = async () => {
-        try {
-            const response = await axios.get(
-                `http://127.0.0.1:8000/api/v1/feedback/${sessionId}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
-            setData(response.data);
-        } catch (err) {
-            console.log(err);
-        } finally {
-            setLoading(false);
-        }
-    };
+    }, [sessionId]);
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-[#f0f4fa] flex items-center justify-center">
-                <div className="text-gray-500 text-lg">Loading feedback...</div>
+            <div className="min-h-screen bg-[#f0f4fa] flex flex-col items-center justify-center p-6 text-center">
+                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center max-w-md w-full">
+                    <div className="w-12 h-12 border-3 border-amber-500 border-t-transparent rounded-full animate-spin mb-4" />
+                    <h2 className="text-lg font-bold text-gray-900 mb-1">Loading AI Feedback</h2>
+                    <p className="text-sm text-gray-500">
+                        Analyzing speech transcripts, strengths, weaknesses, and personalized recommendations...
+                    </p>
+                </div>
             </div>
         );
     }
 
     if (!data) {
         return (
-            <div className="min-h-screen bg-[#f0f4fa] flex items-center justify-center">
-                <div className="text-gray-500 text-lg">
-                    Failed to load feedback.
+            <div className="min-h-screen bg-[#f0f4fa] flex flex-col items-center justify-center p-6 text-center">
+                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center max-w-md w-full">
+                    <h2 className="text-lg font-bold text-gray-900 mb-2">Feedback Not Available</h2>
+                    <p className="text-sm text-gray-500 mb-6">
+                        Unable to load interview feedback. You can retry or view your interview history.
+                    </p>
+                    <div className="flex gap-3 w-full">
+                        <button
+                            onClick={() => loadFeedback()}
+                            className="flex-1 py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition shadow-sm"
+                        >
+                            Retry
+                        </button>
+                        <button
+                            onClick={() => navigate(`/interview-analytics/${sessionId}`)}
+                            className="flex-1 py-2.5 px-4 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium text-sm transition"
+                        >
+                            Analytics
+                        </button>
+                    </div>
                 </div>
             </div>
         );

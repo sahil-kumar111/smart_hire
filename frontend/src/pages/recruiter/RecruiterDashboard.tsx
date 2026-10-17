@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { getShortlist, updateShortlist } from "../../services/shortlistService";
 import { deleteAccount } from "../../services/authService";
-import axios from "axios";
+import api from "../../api/axios";
+
 import {
     Briefcase,
     LogOut,
@@ -26,9 +27,12 @@ type HistoryItem = {
     overall_score: number;
     date: string;
     candidate_name?: string;
+    candidate_email?: string;
+    interview_type?: string;
+    status?: string;
 };
 
-type ShortlistStatus = "pending" | "shortlisted" | "rejected";
+type ShortlistStatus = "pending" | "selected" | "shortlisted" | "rejected";
 
 export default function RecruiterDashboard() {
     const { user, logout, token } = useAuth();
@@ -73,16 +77,11 @@ export default function RecruiterDashboard() {
         return () => clearInterval(timer);
     }, []);
 
-    useEffect(() => {
-        loadSessions();
-        loadShortlist();
-    }, []);
-
     async function loadSessions() {
         if (!token) return;
         try {
-            const res = await axios.get(
-                "http://127.0.0.1:8000/api/v1/interview-monitor/history",
+            const res = await api.get(
+                "/interview-monitor/history",
                 {
                     headers: { Authorization: `Bearer ${token}` },
                 }
@@ -109,6 +108,11 @@ export default function RecruiterDashboard() {
             console.error(err);
         }
     }
+
+    useEffect(() => {
+        loadSessions();
+        loadShortlist();
+    }, [token]);
 
     async function updateStatus(sessionId: number, status: ShortlistStatus) {
         if (!token) return;
@@ -162,7 +166,7 @@ export default function RecruiterDashboard() {
             : 0;
 
     const shortlistedCount = Object.values(statusMap).filter(
-        (s) => s === "shortlisted"
+        (s) => s === "selected" || s === "shortlisted"
     ).length;
 
     const highPerformers = sessions.filter(
@@ -170,11 +174,11 @@ export default function RecruiterDashboard() {
     ).length;
 
     function statusBadge(status: ShortlistStatus) {
-        if (status === "shortlisted") {
+        if (status === "selected" || status === "shortlisted") {
             return (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
                     <CheckCircle2 size={12} />
-                    Shortlisted
+                    Selected
                 </span>
             );
         }
@@ -187,7 +191,7 @@ export default function RecruiterDashboard() {
             );
         }
         return (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-50 text-gray-600 border border-gray-200">
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
                 <Clock3 size={12} />
                 Pending
             </span>
@@ -300,7 +304,7 @@ export default function RecruiterDashboard() {
                                 <CheckCircle2 size={20} className="text-violet-600" />
                             </div>
                             <p className="text-[13px] text-gray-500 font-medium">
-                                Shortlisted
+                                Selected Candidates
                             </p>
                         </div>
                         <h3 className="text-3xl font-bold text-gray-900">
@@ -380,10 +384,10 @@ export default function RecruiterDashboard() {
                             <table className="w-full text-sm">
                                 <thead>
                                     <tr className="text-left text-gray-500 border-b border-gray-100">
-                                        <th className="pb-3 font-medium">Session</th>
+                                        <th className="pb-3 font-medium">Candidate / Session</th>
                                         <th className="pb-3 font-medium">Date</th>
                                         <th className="pb-3 font-medium">Score</th>
-                                        <th className="pb-3 font-medium">Status</th>
+                                        <th className="pb-3 font-medium">Recruiter Decision</th>
                                         <th className="pb-3 font-medium text-right">
                                             Actions
                                         </th>
@@ -401,7 +405,24 @@ export default function RecruiterDashboard() {
                                                 className="border-b border-gray-50 hover:bg-gray-50/50"
                                             >
                                                 <td className="py-4 font-semibold text-gray-900">
-                                                    #{item.session_id}
+                                                    <div className="flex items-center gap-2">
+                                                        <span>#{item.session_id}</span>
+                                                        {item.interview_type && (
+                                                            <span className="text-[11px] font-normal uppercase px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-100">
+                                                                {item.interview_type}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    {item.candidate_name && (
+                                                         <div className="text-xs font-normal text-gray-600 mt-0.5">
+                                                             {item.candidate_name}
+                                                         </div>
+                                                     )}
+                                                     {item.candidate_email && (
+                                                         <div className="text-[11px] font-normal text-gray-400">
+                                                             {item.candidate_email}
+                                                         </div>
+                                                     )}
                                                 </td>
                                                 <td className="py-4 text-gray-600">
                                                     {item.date
@@ -443,7 +464,7 @@ export default function RecruiterDashboard() {
                                                         <button
                                                             onClick={() =>
                                                                 window.open(
-                                                                    `http://127.0.0.1:8000/api/v1/report/${item.session_id}`,
+                                                                    `${api.defaults.baseURL}/report/${item.session_id}`,
                                                                     "_blank"
                                                                 )
                                                             }
@@ -454,20 +475,18 @@ export default function RecruiterDashboard() {
                                                         </button>
 
                                                         <select
-                                                            value={status}
+                                                            value={status === "shortlisted" ? "selected" : status}
                                                             onChange={(e) =>
                                                                 updateStatus(
                                                                     item.session_id,
                                                                     e.target.value as ShortlistStatus
                                                                 )
                                                             }
-                                                            className="h-9 rounded-xl border border-gray-200 px-2 text-xs outline-none bg-white"
+                                                            className="h-9 rounded-xl border border-gray-200 px-2 text-xs outline-none bg-white font-medium"
                                                         >
                                                             <option value="pending">Pending</option>
-                                                            <option value="shortlisted">
-                                                                Shortlist
-                                                            </option>
-                                                            <option value="rejected">Reject</option>
+                                                            <option value="selected">Selected</option>
+                                                            <option value="rejected">Rejected</option>
                                                         </select>
                                                     </div>
                                                 </td>

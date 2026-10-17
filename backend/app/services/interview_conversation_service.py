@@ -34,20 +34,35 @@ class InterviewConversationService:
         if session is None:
             raise Exception("Interview session not found.")
 
-        analysis = session.resume.analysis
+        analysis = getattr(session.resume, "analysis", None)
 
-        resume_analysis = {
-            "technical_skills": analysis.technical_skills,
-            "soft_skills": analysis.soft_skills,
-            "frameworks": analysis.frameworks,
-            "tools": analysis.tools,
-            "databases": analysis.databases,
-            "cloud": analysis.cloud,
-            "certifications": analysis.certifications,
-            "education": analysis.education,
-            "experience": analysis.experience,
-            "projects": analysis.projects,
-        }
+        if analysis:
+            resume_analysis = {
+                "technical_skills": analysis.technical_skills or [],
+                "soft_skills": analysis.soft_skills or [],
+                "frameworks": analysis.frameworks or [],
+                "tools": analysis.tools or [],
+                "databases": analysis.databases or [],
+                "cloud": analysis.cloud or [],
+                "certifications": analysis.certifications or [],
+                "education": analysis.education or [],
+                "experience": analysis.experience or [],
+                "projects": analysis.projects or [],
+            }
+        else:
+            resume_analysis = {
+                "technical_skills": [],
+                "soft_skills": [],
+                "frameworks": [],
+                "tools": [],
+                "databases": [],
+                "cloud": [],
+                "certifications": [],
+                "education": [],
+                "experience": [],
+                "projects": [],
+                "extracted_text": getattr(session.resume, "extracted_text", "") or "",
+            }
 
         # Save candidate message (skip empty first call if you want)
         if candidate_message and candidate_message.strip():

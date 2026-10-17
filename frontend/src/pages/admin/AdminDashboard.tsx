@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { deleteAccount } from "../../services/authService";
-import axios from "axios";
+import api from "../../api/axios";
 import {
     Briefcase,
     LogOut,
@@ -69,14 +69,10 @@ export default function AdminDashboard() {
         return () => clearInterval(timer);
     }, []);
 
-    useEffect(() => {
-        loadUsers();
-    }, []);
-
     async function loadUsers() {
         if (!token) return;
         try {
-            const res = await axios.get("http://127.0.0.1:8000/api/v1/users", {
+            const res = await api.get("/users", {
                 headers: { Authorization: `Bearer ${token}` },
             });
             setUsers(Array.isArray(res.data) ? res.data : []);
@@ -87,6 +83,11 @@ export default function AdminDashboard() {
             setLoading(false);
         }
     }
+
+    useEffect(() => {
+        loadUsers();
+    }, [token]);
+
 
     async function handleDeleteAccount() {
         const ok = window.confirm(

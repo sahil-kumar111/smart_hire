@@ -2,12 +2,11 @@ from sqlalchemy.orm import Session
 from app.repositories.job_description_repository import JobDescriptionRepository
 from app.repositories.resume_repository import ResumeRepository
 from app.models.resume_analysis import ResumeAnalysis
-from groq import Groq
-from dotenv import load_dotenv
-import json
-import os
+from app.ai.groq_client import GroqClient
+from app.ai.json_helper import extract_json
+import logging
 
-load_dotenv()
+logger = logging.getLogger(__name__)
 
 
 class JobDescriptionService:
@@ -16,7 +15,8 @@ class JobDescriptionService:
         self.db = db
         self.jd_repo = JobDescriptionRepository(db)
         self.resume_repo = ResumeRepository(db)
-        self.client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+        self.ai_client = GroqClient()
+
 
     def save_jd(self, user_id: int, jd_text: str):
         return self.jd_repo.create_or_update(user_id, jd_text)
@@ -86,21 +86,8 @@ Rules:
 """
 
         try:
-            response = self.client.chat.completions.create(
-                model="openai/gpt-oss-120b", 
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "You are a precise resume-to-job matching engine. Always respond with pure JSON only.",
-                    },
-                    {"role": "user", "content": prompt},
-                ],
-                temperature=0.2,
-                response_format={"type": "json_object"},
-            )
-
-            content = response.choices[0].message.content
-            result = json.loads(content)
+            content = self.ai_client.generate(prompt)
+            result = extract_json(content)
 
             return {
                 "match_score": float(result.get("match_score", 0)),
@@ -110,5 +97,5 @@ Rules:
             }
 
         except Exception as e:
-            print("Groq Match Error:", str(e))
+            logger.error(f"Resume match error: {e}")
             raise ValueError("Failed to analyze resume match. Please try again.")

@@ -8,7 +8,9 @@ def require_role(allowed_roles: list[str]):
     def role_checker(
         current_user: User = Depends(get_current_user)
     ):
-        if current_user.role not in allowed_roles:
+        user_role = (current_user.role or "").lower()
+        normalized_allowed = [r.lower() for r in allowed_roles]
+        if user_role not in normalized_allowed:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Permission denied."

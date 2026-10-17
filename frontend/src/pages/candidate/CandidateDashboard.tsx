@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import axios from "axios";
+import api from "../../api/axios";
 import toast from "react-hot-toast";
 import {
     Briefcase,
@@ -12,6 +12,13 @@ import {
     CheckCircle2,
     PieChart,
     Star,
+    Clock3,
+    XCircle,
+    Trophy,
+    Eye,
+    Download,
+    Award,
+    ArrowRight,
 } from "lucide-react";
 
 import ResumeUpload from "../../components/resume/ResumeUpload";
@@ -23,12 +30,14 @@ import {
 } from "../../services/jdService";
 import { getResumes } from "../../services/resumeService";
 import { deleteAccount } from "../../services/authService";
+import { type CandidateInterview } from "../../services/shortlistService";
 
 export default function Dashboard() {
     const { user, logout, token } = useAuth();
     const navigate = useNavigate();
 
     const [refreshKey, setRefreshKey] = useState(0);
+    const [interviews, setInterviews] = useState<CandidateInterview[]>([]);
 
     const [stats, setStats] = useState({
         totalResumes: 0,
@@ -103,11 +112,21 @@ export default function Dashboard() {
             try {
                 const resumes = await getResumes(token);
 
-                const historyRes = await axios.get(
-                    "http://127.0.0.1:8000/api/v1/interview-monitor/history",
-                    { headers: { Authorization: `Bearer ${token}` } }
-                );
-                const history = historyRes.data || [];
+                let history: CandidateInterview[] = [];
+                try {
+                    const res = await api.get(
+                        "/candidate/interviews",
+                        { headers: { Authorization: `Bearer ${token}` } }
+                    );
+                    history = Array.isArray(res.data) ? res.data : [];
+                } catch {
+                    const historyRes = await api.get(
+                        "/interview-monitor/history",
+                        { headers: { Authorization: `Bearer ${token}` } }
+                    );
+                    history = Array.isArray(historyRes.data) ? historyRes.data : [];
+                }
+                setInterviews(history);
 
                 const totalResumes = resumes?.length || 0;
                 const interviewsTaken = history.length;
@@ -239,6 +258,46 @@ export default function Dashboard() {
                     </span>
                 </div>
 
+                {interviews.some(
+                    (i) => (i.selection_status || i.status) === "selected" || (i.selection_status || i.status) === "shortlisted"
+                ) && (
+                    <div className="mb-8 p-5 rounded-2xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 text-white shadow-md border border-emerald-400/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0">
+                                <Trophy size={26} className="text-white" />
+                            </div>
+                            <div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <h3 className="text-lg font-bold">
+                                        Congratulations! You have been Selected 🎉
+                                    </h3>
+                                    <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-white text-emerald-800 shadow-xs">
+                                        Recruiter Status: Selected
+                                    </span>
+                                </div>
+                                <p className="text-sm text-emerald-50 mt-1">
+                                    The recruiter has reviewed your interview and marked you as <strong>Selected</strong>! Check the details in your applications table below.
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                            <button
+                                onClick={() => {
+                                    const selected = interviews.find(
+                                        (i) => (i.selection_status || i.status) === "selected" || (i.selection_status || i.status) === "shortlisted"
+                                    );
+                                    if (selected) {
+                                        navigate(`/interview-analytics/${selected.session_id}`);
+                                    }
+                                }}
+                                className="px-4 py-2 rounded-xl bg-white text-emerald-800 font-semibold text-xs hover:bg-emerald-50 transition shadow-sm"
+                            >
+                                View Analytics
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
                         <div className="flex items-center gap-3 mb-3">
@@ -305,6 +364,198 @@ export default function Dashboard() {
                         </h3>
                         <p className="text-xs text-gray-400 mt-1">Overall average</p>
                     </div>
+                </div>
+
+                {/* ================= INTERVIEW APPLICATIONS & RECRUITER STATUS ================= */}
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-8">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+                                <Award size={20} />
+                            </div>
+                            <div>
+                                <h2 className="text-lg font-semibold text-gray-900">
+                                    My Interview Applications & Results
+                                </h2>
+                                <p className="text-sm text-gray-500">
+                                    Live recruiter status and AI evaluation reports for your interviews
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => navigate("/interview-history")}
+                                className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 hover:underline"
+                            >
+                                Full History <ArrowRight size={13} />
+                            </button>
+                        </div>
+                    </div>
+
+                    {interviews.length === 0 ? (
+                        <div className="text-center py-10 px-4 rounded-xl border border-dashed border-gray-200 bg-gray-50/50">
+                            <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-3">
+                                <Briefcase size={22} />
+                            </div>
+                            <h3 className="font-semibold text-gray-900 text-sm">
+                                No interviews taken yet
+                            </h3>
+                            <p className="text-xs text-gray-500 max-w-sm mx-auto mt-1 mb-4">
+                                Once you complete an AI interview, your results and recruiter decision (Pending, Selected, or Rejected) will appear here live.
+                            </p>
+                            <button
+                                onClick={() => {
+                                    window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+                                }}
+                                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition shadow-sm"
+                            >
+                                Upload Resume to Start
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="text-left text-gray-400 text-xs font-medium border-b border-gray-100">
+                                        <th className="pb-3">Interview Session</th>
+                                        <th className="pb-3">Date Completed</th>
+                                        <th className="pb-3">AI Score</th>
+                                        <th className="pb-3">Recruiter Decision</th>
+                                        <th className="pb-3 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-50">
+                                    {interviews.map((item) => {
+                                        const rawStatus = (item.selection_status || item.status || "pending").toLowerCase();
+                                        const isSelected = rawStatus === "selected" || rawStatus === "shortlisted";
+                                        const isRejected = rawStatus === "rejected";
+                                        const isPending = !isSelected && !isRejected;
+                                        const score = Number(item.overall_score) || 0;
+
+                                        return (
+                                            <tr
+                                                key={item.session_id}
+                                                className={`hover:bg-gray-50/60 transition ${
+                                                    isSelected ? "bg-emerald-50/30" : ""
+                                                }`}
+                                            >
+                                                <td className="py-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-semibold text-gray-900">
+                                                            Session #{item.session_id}
+                                                        </span>
+                                                        <span className="text-[11px] uppercase font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
+                                                            {item.interview_type || "Technical"}
+                                                        </span>
+                                                    </div>
+                                                </td>
+
+                                                <td className="py-4 text-gray-600 text-xs">
+                                                    {item.date
+                                                        ? new Date(item.date).toLocaleString("en-IN", {
+                                                              day: "2-digit",
+                                                              month: "short",
+                                                              year: "numeric",
+                                                              hour: "2-digit",
+                                                              minute: "2-digit",
+                                                          })
+                                                        : "—"}
+                                                </td>
+
+                                                <td className="py-4">
+                                                    <span
+                                                        className={`inline-flex px-2.5 py-1 rounded-full text-xs font-bold ${
+                                                            score >= 80
+                                                                ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
+                                                                : score >= 60
+                                                                  ? "bg-amber-50 text-amber-700 border border-amber-100"
+                                                                  : "bg-red-50 text-red-600 border border-red-100"
+                                                        }`}
+                                                    >
+                                                        {score.toFixed(1)} / 100
+                                                    </span>
+                                                </td>
+
+                                                <td className="py-4">
+                                                    {isSelected && (
+                                                        <div className="flex flex-col gap-0.5">
+                                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-xs w-fit">
+                                                                <CheckCircle2 size={13} className="text-emerald-600" />
+                                                                Selected
+                                                            </span>
+                                                            <span className="text-[11px] text-emerald-700 font-medium">
+                                                                Recruiter marked you as Selected 🎉
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    {isPending && (
+                                                        <div className="flex flex-col gap-0.5">
+                                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200 w-fit">
+                                                                <Clock3 size={13} className="text-amber-600" />
+                                                                Pending Review
+                                                            </span>
+                                                            <span className="text-[11px] text-gray-400">
+                                                                Under recruiter evaluation
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    {isRejected && (
+                                                        <div className="flex flex-col gap-0.5">
+                                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200 w-fit">
+                                                                <XCircle size={13} className="text-red-500" />
+                                                                Not Selected
+                                                            </span>
+                                                            <span className="text-[11px] text-gray-400">
+                                                                Decision finalized
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </td>
+
+                                                <td className="py-4 text-right">
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        <button
+                                                            onClick={() =>
+                                                                navigate(`/interview-analytics/${item.session_id}`)
+                                                            }
+                                                            className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 text-xs font-medium hover:bg-blue-100 transition"
+                                                        >
+                                                            <Eye size={12} />
+                                                            Analytics
+                                                        </button>
+
+                                                        <button
+                                                            onClick={() =>
+                                                                navigate(`/feedback/${item.session_id}`)
+                                                            }
+                                                            className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-amber-200 bg-amber-50 text-amber-700 text-xs font-medium hover:bg-amber-100 transition"
+                                                        >
+                                                            <Award size={12} />
+                                                            Feedback
+                                                        </button>
+
+                                                        <button
+                                                            onClick={() =>
+                                                                window.open(
+                                                                    `${api.defaults.baseURL}/report/${item.session_id}`,
+                                                                    "_blank"
+                                                                )
+                                                            }
+                                                            className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 text-xs font-medium transition"
+                                                            title="Download PDF Report"
+                                                        >
+                                                            <Download size={12} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
                 </div>
 
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">

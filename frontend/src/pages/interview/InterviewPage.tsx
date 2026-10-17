@@ -200,18 +200,26 @@ export default function InterviewPage() {
         setFinished(true);
 
         try {
-            await finishInterview(sessionId, token);
             await monitorRef.current?.stopRecording();
-            setTimeout(() => {
-                navigate(`/interview-analytics/${sessionId}`);
-            }, 2500);
+            await finishInterview(sessionId, token);
         } catch (err) {
-            console.log(err);
+            console.error(err);
+        } finally {
+            navigate(`/interview-analytics/${sessionId}`);
         }
     }
 
     return (
-        <div className="min-h-screen bg-[#f0f4fa]">
+        <div className="min-h-screen bg-[#f0f4fa] relative">
+            {finished && (
+                <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-xs flex items-center justify-center z-50">
+                    <div className="bg-white rounded-2xl p-6 shadow-xl flex flex-col items-center gap-3 max-w-sm text-center">
+                        <div className="w-10 h-10 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                        <h3 className="font-semibold text-gray-900 text-lg">Finishing Interview...</h3>
+                        <p className="text-sm text-gray-500">Compiling your performance analytics and AI evaluation report.</p>
+                    </div>
+                </div>
+            )}
             {/* Header */}
             <header className="bg-white border-b border-gray-200/70">
                 <div className="max-w-[1580px] mx-auto px-6 py-3.5 flex items-center justify-between">

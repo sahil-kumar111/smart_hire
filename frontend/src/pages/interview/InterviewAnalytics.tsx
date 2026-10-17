@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../../api/axios";
 import { useNavigate, useParams } from "react-router-dom";
 import {
     Bot,
@@ -19,34 +19,88 @@ import TranscriptHistory from "../../components/interview/TranscriptHistory";
 export default function InterviewAnalytics() {
     const { sessionId } = useParams();
     const navigate = useNavigate();
-    const token = localStorage.getItem("token");
 
-    const [analytics, setAnalytics] = useState<any>(null);
+    const [analytics, setAnalytics] = useState<Record<string, any> | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        loadAnalytics();
-    }, []);
+    async function fetchWithRetry(retries = 3, delayMs = 1200): Promise<any> {
+        for (let i = 0; i < retries; i++) {
+            try {
+                const response = await api.get(`/interview-monitor/analytics/${sessionId}`);
+                if (response.data) {
+                    return response.data;
+                }
+            } catch (err: any) {
+                if (i < retries - 1) {
+                    await new Promise((res) => setTimeout(res, delayMs));
+                } else {
+                    throw err;
+                }
+            }
+        }
+        throw new Error("Analytics could not be loaded.");
+    }
 
     async function loadAnalytics() {
+        if (!sessionId) return;
+        setLoading(true);
+        setError(null);
         try {
-            const response = await axios.get(
-                `http://127.0.0.1:8000/api/v1/interview-monitor/analytics/${sessionId}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
-            setAnalytics(response.data);
-        } catch (err) {
-            console.error(err);
+            const data = await fetchWithRetry();
+            setAnalytics(data);
+        } catch (err: any) {
+            console.error("Failed to load analytics:", err);
+            setError(err?.response?.data?.detail || "Could not retrieve interview analytics.");
+        } finally {
+            setLoading(false);
         }
     }
 
-    if (!analytics) {
+    useEffect(() => {
+        loadAnalytics();
+    }, [sessionId]);
+
+    if (loading) {
         return (
-            <div className="min-h-screen bg-[#f0f4fa] flex items-center justify-center">
-                <div className="text-gray-500 text-lg">Loading analytics...</div>
+            <div className="min-h-screen bg-[#f0f4fa] flex flex-col items-center justify-center p-6 text-center">
+                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center max-w-md w-full">
+                    <div className="w-12 h-12 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mb-4" />
+                    <h2 className="text-lg font-bold text-gray-900 mb-1">Compiling Interview Analytics</h2>
+                    <p className="text-sm text-gray-500">
+                        Synthesizing fluency metrics, emotion detection, eye contact scores, and AI evaluations...
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error || !analytics) {
+        return (
+            <div className="min-h-screen bg-[#f0f4fa] flex flex-col items-center justify-center p-6 text-center">
+                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center max-w-md w-full">
+                    <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mb-4">
+                        <Bot size={24} />
+                    </div>
+                    <h2 className="text-lg font-bold text-gray-900 mb-2">Analytics Still Finalizing</h2>
+                    <p className="text-sm text-gray-500 mb-6">
+                        {error || "Your interview report is being processed by the AI pipeline."}
+                    </p>
+                    <div className="flex gap-3 w-full">
+                        <button
+                            onClick={() => loadAnalytics()}
+                            className="flex-1 py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition shadow-sm"
+                        >
+                            Retry
+                        </button>
+                        <button
+                            onClick={() => navigate("/interview-history")}
+                            className="flex-1 py-2.5 px-4 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium text-sm transition"
+                        >
+                            History
+                        </button>
+                    </div>
+                </div>
             </div>
         );
     }
@@ -99,7 +153,7 @@ export default function InterviewAnalytics() {
                         <button
                             onClick={() =>
                                 window.open(
-                                    `http://127.0.0.1:8000/api/v1/report/${sessionId}`,
+                                    `${api.defaults.baseURL}/report/${sessionId}`,
                                     "_blank"
                                 )
                             }

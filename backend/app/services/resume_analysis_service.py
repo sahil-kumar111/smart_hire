@@ -36,25 +36,16 @@ class ResumeAnalysisService:
 
             resume_id=resume.id,
 
-            technical_skills=result["technical_skills"],
-
-            soft_skills=result["soft_skills"],
-
-            frameworks=result["frameworks"],
-
-            tools=result["tools"],
-
-            databases=result["databases"],
-
-            cloud=result["cloud"],
-
-            certifications=result["certifications"],
-
-            education=result["education"],
-
-            experience=result["experience"],
-
-            projects=result["projects"],
+            technical_skills=result.get("technical_skills", []),
+            soft_skills=result.get("soft_skills", []),
+            frameworks=result.get("frameworks", []),
+            tools=result.get("tools", []),
+            databases=result.get("databases", []),
+            cloud=result.get("cloud", []),
+            certifications=result.get("certifications", []),
+            education=result.get("education", []),
+            experience=result.get("experience", []),
+            projects=result.get("projects", []),
         )
 
         return self.repository.create(

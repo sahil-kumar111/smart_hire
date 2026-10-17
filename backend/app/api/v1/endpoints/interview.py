@@ -274,9 +274,18 @@ def finish_interview(
         repository
     )
 
-    return service.finish_session(
+    finished_session = service.finish_session(
         session
     )
+
+    # Pre-generate and persist analytics so subsequent analytics and report requests load immediately
+    try:
+        from app.services.interview_analytics_service import InterviewAnalyticsService
+        InterviewAnalyticsService().get_session_analytics(db, session_id)
+    except Exception:
+        pass
+
+    return finished_session
 
 
 @router.get(
@@ -321,29 +330,4 @@ def interview_report(
 
     return service.get_report(
         session_id
-    )
-
-@router.get(
-    "/sessions",
-    response_model=list[
-        InterviewSessionResponse
-    ],
-)
-def get_sessions(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(
-        get_current_user
-    ),
-):
-
-    repository = InterviewSessionRepository(
-        db
-    )
-
-    service = InterviewSessionService(
-        repository
-    )
-
-    return service.get_user_sessions(
-        current_user.id
     )

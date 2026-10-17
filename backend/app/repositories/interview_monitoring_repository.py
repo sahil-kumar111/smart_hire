@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from backend.app.models.interview_monitor import InterviewMonitoring
+from app.models.interview_monitor import InterviewMonitor
 
 
 class InterviewMonitoringRepository:
@@ -10,13 +10,8 @@ class InterviewMonitoringRepository:
         db: Session,
         data: dict,
     ):
-
-        record = InterviewMonitoring(**data)
-
+        record = InterviewMonitor(**data)
         db.add(record)
-
         db.commit()
-
         db.refresh(record)
-
         return record

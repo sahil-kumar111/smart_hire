@@ -5,7 +5,7 @@ import {
 } from "react";
 
 import Webcam from "react-webcam";
-import axios from "axios";
+import api from "../../api/axios";
 
 export type InterviewMonitorHandle = {
     startRecording: () => Promise<void>;
@@ -50,8 +50,6 @@ const InterviewMonitor = forwardRef<
         const streamRef = useRef<MediaStream | null>(null);
         const audioChunksRef = useRef<Blob[]>([]);
         const recordingRef = useRef(false);
-
-        const token = localStorage.getItem("token");
 
         //-----------------------------------------
         // Reset Monitoring UI
@@ -188,14 +186,9 @@ const InterviewMonitor = forwardRef<
             form.append("session_id", sessionId.toString());
 
             try {
-                const response = await axios.post(
-                    "http://127.0.0.1:8000/api/v1/interview-monitor/analyze",
-                    form,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                    }
+                const response = await api.post(
+                    "/interview-monitor/analyze",
+                    form
                 );
 
                 const data = response.data;

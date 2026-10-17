@@ -58,20 +58,3 @@ class InterviewSessionRepository:
         self.db.commit()
         self.db.refresh(session)
         return session
-
-    def get_by_user(
-        self,
-        user_id: int,
-    ):
-        return (
-            self.db.query(
-                InterviewSession
-            )
-            .filter(
-                InterviewSession.user_id == user_id
-            )
-            .order_by(
-                InterviewSession.created_at.desc()
-            )
-            .all()
-        )

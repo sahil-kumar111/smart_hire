@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../../api/axios";
 import {
     Bot,
     Plus,
@@ -16,40 +16,30 @@ import {
     TrendingUp,
     Info,
     FileText,
+    XCircle,
 } from "lucide-react";
 
 type HistoryItem = {
     session_id: number;
     overall_score: number;
     date: string;
-    // optional fields if your API returns them
+    interview_type?: string;
     duration?: number;
     status?: string;
+    selection_status?: string;
 };
 
 export default function InterviewHistory() {
     const navigate = useNavigate();
-    const token = localStorage.getItem("token");
 
     const [history, setHistory] = useState<HistoryItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
 
-    useEffect(() => {
-        loadHistory();
-    }, []);
-
-    async function loadHistory() {
+    const loadHistory = useCallback(async () => {
         try {
             setLoading(true);
-            const response = await axios.get(
-                "http://127.0.0.1:8000/api/v1/interview-monitor/history",
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
+            const response = await api.get("/interview-monitor/history");
             setHistory(response.data || []);
         } catch (error) {
             console.error(error);
@@ -57,7 +47,11 @@ export default function InterviewHistory() {
         } finally {
             setLoading(false);
         }
-    }
+    }, []);
+
+    useEffect(() => {
+        loadHistory();
+    }, [loadHistory]);
 
     // Derived stats
     const totalInterviews = history.length;
@@ -289,7 +283,26 @@ export default function InterviewHistory() {
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-6">
+                                    <div className="flex items-center gap-4 sm:gap-6">
+                                        <div>
+                                            {(item.selection_status === "selected" || item.status === "selected" || item.selection_status === "shortlisted") ? (
+                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-xs">
+                                                    <CheckCircle2 size={13} className="text-emerald-600" />
+                                                    Selected
+                                                </span>
+                                            ) : (item.selection_status === "rejected" || item.status === "rejected") ? (
+                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
+                                                    <XCircle size={13} className="text-red-500" />
+                                                    Not Selected
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                                                    <Clock3 size={13} className="text-amber-600" />
+                                                    Pending Review
+                                                </span>
+                                            )}
+                                        </div>
+
                                         <div className="text-right">
                                             <p className="text-sm text-gray-500">Score</p>
                                             <p className="font-bold text-blue-600">

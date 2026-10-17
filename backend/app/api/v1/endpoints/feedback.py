@@ -22,11 +22,26 @@ def get_feedback(
         .filter(
             InterviewMonitor.session_id == session_id
         )
+        .order_by(InterviewMonitor.created_at.desc())
         .first()
     )
 
     if report is None:
+        from app.services.interview_analytics_service import InterviewAnalyticsService
+        analytics = InterviewAnalyticsService().get_session_analytics(db, session_id)
+        if analytics is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Interview report not found.",
+            )
+        report = (
+            db.query(InterviewMonitor)
+            .filter(InterviewMonitor.session_id == session_id)
+            .order_by(InterviewMonitor.created_at.desc())
+            .first()
+        )
 
+    if report is None:
         raise HTTPException(
             status_code=404,
             detail="Interview report not found.",

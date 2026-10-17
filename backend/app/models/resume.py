@@ -68,6 +68,7 @@ class Resume(Base):
     
     sessions = relationship(
         "InterviewSession",
+        back_populates="resume",
         cascade="all, delete-orphan",
         passive_deletes=True,
     )

@@ -44,3 +44,23 @@ def get_current_user(
         raise credentials_exception
 
     return user
+
+
+def get_optional_current_user(
+    token: str | None = Depends(OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)),
+    db: Session = Depends(get_db),
+):
+    if not token:
+        return None
+    try:
+        payload = jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM],
+        )
+        email = payload.get("sub")
+        if not email:
+            return None
+        return UserRepository(db).get_by_email(email)
+    except Exception:
+        return None

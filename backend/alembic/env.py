@@ -5,6 +5,7 @@ from sqlalchemy import pool
 
 from app.core.config import settings
 from app.database.base import Base
+import app.models  # Register all models with Base.metadata
 
 from alembic import context
 
@@ -13,7 +14,7 @@ from alembic import context
 config = context.config
 config.set_main_option(
     "sqlalchemy.url",
-    settings.DATABASE_URL
+    settings.sync_database_url if hasattr(settings, "sync_database_url") and settings.sync_database_url else settings.DATABASE_URL
 )
 
 # Interpret the config file for Python logging.
@@ -23,8 +24,6 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,

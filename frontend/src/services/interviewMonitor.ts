@@ -1,15 +1,11 @@
-import axios from "axios";
-
-const API = axios.create({
-  baseURL: "http://127.0.0.1:8000/api/v1",
-});
+import api from "../api/axios";
 
 export interface InterviewResult {
-  speech: any;
-  filler_words: any;
-  emotion: any;
-  eye_contact: any;
-  score: any;
+  speech: Record<string, unknown>;
+  filler_words: Record<string, unknown>;
+  emotion: Record<string, unknown>;
+  eye_contact: Record<string, unknown>;
+  score: Record<string, unknown>;
 }
 
 export async function analyzeInterview(
@@ -17,14 +13,14 @@ export async function analyzeInterview(
   audio: Blob,
   image: Blob
 ): Promise<InterviewResult> {
-
   const formData = new FormData();
 
+  formData.append("session_id", String(sessionId));
   formData.append("audio", audio, "audio.webm");
   formData.append("image", image, "frame.jpg");
 
-  const response = await API.post(
-    `/interview-monitor/analyze?session_id=${sessionId}`,
+  const response = await api.post(
+    `/interview-monitor/analyze`,
     formData,
     {
       headers: {

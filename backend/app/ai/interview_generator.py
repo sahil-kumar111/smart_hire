@@ -1,21 +1,18 @@
-import json
-
 from app.ai.groq_client import GroqClient
-from app.ai.interview_prompt import interview_prompt
+from app.ai.interview_prompt import interview_question_generation_prompt
+from app.ai.json_helper import extract_json
 
 
 class InterviewGenerator:
 
     def __init__(self):
-
         self.client = GroqClient()
 
     def generate(
         self,
         resume_analysis: dict,
     ):
-
-        prompt = interview_prompt(
+        prompt = interview_question_generation_prompt(
             resume_analysis
         )
 
@@ -23,11 +20,4 @@ class InterviewGenerator:
             prompt
         )
 
-        response = (
-            response
-            .replace("```json", "")
-            .replace("```", "")
-            .strip()
-        )
-
-        return json.loads(response)
+        return extract_json(response)

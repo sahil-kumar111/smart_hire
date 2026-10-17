@@ -81,5 +81,5 @@ class InterviewSession(Base):
         passive_deletes=True,
     )
 
-    resume = relationship("Resume")
+    resume = relationship("Resume", back_populates="sessions")
     user = relationship("User")

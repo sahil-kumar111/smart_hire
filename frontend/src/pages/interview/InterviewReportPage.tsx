@@ -46,38 +46,65 @@ export default function InterviewReportPage() {
     const [report, setReport] = useState<InterviewReport | null>(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        async function loadReport() {
-            if (!token || !sessionId) {
-                setLoading(false);
-                return;
-            }
-
-            try {
-                const data = await getInterviewReport(sessionId, token);
-                setReport(data);
-            } catch (err) {
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
+    async function loadReport(retries = 3, delayMs = 1200) {
+        if (!sessionId) {
+            setLoading(false);
+            return;
         }
 
+        setLoading(true);
+        for (let i = 0; i < retries; i++) {
+            try {
+                const data = await getInterviewReport(sessionId, token || undefined);
+                if (data) {
+                    setReport(data);
+                    setLoading(false);
+                    return;
+                }
+            } catch (err) {
+                if (i < retries - 1) {
+                    await new Promise((res) => setTimeout(res, delayMs));
+                } else {
+                    console.error("Error loading interview report:", err);
+                }
+            }
+        }
+        setLoading(false);
+    }
+
+    useEffect(() => {
         loadReport();
     }, [sessionId, token]);
 
     if (loading) {
         return (
-            <div className="flex justify-center items-center h-screen text-xl">
-                Loading Interview Report...
+            <div className="min-h-screen bg-[#f0f4fa] flex flex-col items-center justify-center p-6 text-center">
+                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center max-w-md w-full">
+                    <div className="w-12 h-12 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mb-4" />
+                    <h2 className="text-lg font-bold text-gray-900 mb-1">Generating Interview Report</h2>
+                    <p className="text-sm text-gray-500">
+                        Evaluating question scores, strengths, weaknesses, and formulating your learning plan...
+                    </p>
+                </div>
             </div>
         );
     }
 
     if (!report) {
         return (
-            <div className="flex justify-center items-center h-screen">
-                Failed to load report.
+            <div className="min-h-screen bg-[#f0f4fa] flex flex-col items-center justify-center p-6 text-center">
+                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center max-w-md w-full">
+                    <h2 className="text-lg font-bold text-gray-900 mb-2">Report Not Found</h2>
+                    <p className="text-sm text-gray-500 mb-6">
+                        We could not compile an interview report for this session yet.
+                    </p>
+                    <button
+                        onClick={() => loadReport()}
+                        className="py-2.5 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition shadow-sm"
+                    >
+                        Retry
+                    </button>
+                </div>
             </div>
         );
     }

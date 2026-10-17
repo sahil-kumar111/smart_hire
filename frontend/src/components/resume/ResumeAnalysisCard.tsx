@@ -274,4 +274,3 @@ export default function ResumeAnalysisCard({ analysis }: Props) {
         </div>
     );
 }
-7
